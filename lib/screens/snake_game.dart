@@ -2,42 +2,80 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math';
 
+import '../styles.dart';
+
 class SnakeGame extends StatefulWidget {
   @override
   _SnakeGameState createState() => _SnakeGameState();
 }
 
 class _SnakeGameState extends State<SnakeGame> {
+  @override
+  void initState() {
+    gameBorder();
+    super.initState();
+  }
+
   // static List<int> startingSnakePosition = [65, 85, 105, 125];
   List<int> snakePosition = [65, 85, 105, 125];
   int numberOfSquares = 700;
+  int crossAxisSquareCount = 20;
 
   Timer _timer;
-  // int _startTimer = 0;
   static var randomNumber = Random();
-  int food = randomNumber.nextInt(640);
+  List<int> border = [];
+  int food = randomNumber.nextInt(700);
   static bool gameStarted = false;
   static bool gamePaused = false;
+  static bool gameOver = false;
 
-  void generateFood() {
-    food = randomNumber.nextInt(640);
+  int generateFood() {
+    food = randomNumber.nextInt(700);
+    //if random number includes outside border's number, recalculate generateFood()
+    if (border.contains(food)) {
+      int food = generateFood();
+      return food;
+    } else
+      return food;
+  }
+
+  void initializeGame() {
+    if (_timer != null) _timer.cancel();
+    snakePosition = [65, 85, 105, 125];
+    //gameStarted = false;
+    gamePaused = false;
+    gameOver = false;
+    direction = "down";
+  }
+
+  //Calculate most left/right row and make color black as side borders
+  List<int> gameBorder() {
+    //Calculate right border
+    int j = 19;
+    for (int i = 0; i < (numberOfSquares / crossAxisSquareCount); i++) {
+      border.add(j);
+      j = j + 20;
+    }
+
+    //Calculate left border
+    for (int i = 0; i < numberOfSquares; i++) {
+      if (i % 20 == 0) {
+        border.add(i);
+        // print(border);
+      }
+    }
+
+    return border;
   }
 
   void startGame(List<int> currentSnakePosition) {
     snakePosition = currentSnakePosition;
-    print('3resetSnakePosotion: $snakePosition');
 
     const duration = const Duration(milliseconds: 300);
-    // setState(() {
-    //   snakePosition = currentSnakePosition;
-    //   // _startTimer = timerDuration;
-    //   // print('2. gameStarted: $gameStarted');
-    // });
+
     _timer = Timer.periodic(duration, (Timer timer) {
-      // print('timerDuration $timerDuration');
-      //print('startTimer: $_startTimer');
-      // _startTimer = _startTimer + 1;
       updateSnake(snakePosition);
+
       if (_gameOver()) {
         _timer.cancel();
         _gameOverPopOut();
@@ -49,17 +87,14 @@ class _SnakeGameState extends State<SnakeGame> {
 
   void pauseTimer() {
     if (_timer != null) _timer.cancel();
-    //print('pausedTimer : ${_timer.toString()}');
   }
 
   void unpauseTimer() => startGame(snakePosition);
 
-  var direction = "down";
+  String direction = "down";
   void updateSnake(List<int> currentSnakePosition) {
     setState(() {
       snakePosition = currentSnakePosition;
-      print(snakePosition);
-      //print('3. gameStarted: $gameStarted');
       switch (direction) {
         case "down":
           //.last refers to last number in snakePosition list(becomes snake's head in this case)
@@ -92,14 +127,17 @@ class _SnakeGameState extends State<SnakeGame> {
           count += 1;
         }
         if (count == 2 ||
-            //down border
-            snakePosition.last > 680 ||
-            //up border
-            snakePosition.last < 20 ||
+            //down border. If snake head exceed total square grid count.
+            snakePosition.last > 700 ||
+            //up border. If snake head decreases less than 0.
+            snakePosition.last < 0 ||
             //left border
-            snakePosition.last % 20 == 0 ||
+            (snakePosition.last) % 20 == 0 ||
             //right border
             (snakePosition.last + 1) % 20 == 0) {
+          setState(() {
+            gameOver = true;
+          });
           return true;
         }
       }
@@ -109,27 +147,28 @@ class _SnakeGameState extends State<SnakeGame> {
 
   void _gameOverPopOut() {
     showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.redAccent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20.0),
           ),
-          title: Center(child: Text("- GAME OVER -")),
+          title:
+              Center(child: Text("- GAME OVER -", style: kBlackBigTextStyle1)),
           content: Text(
             "Your Score : ${(snakePosition.length - 4).toString()}",
-            style: TextStyle(color: Colors.lightBlue),
+            style: TextStyle(color: Colors.white),
           ),
           actions: [
             FlatButton(
-              child: Text("Play Again?"),
+              child: Text(
+                "Play Again?",
+                style: kBlackSmallTextStyle1,
+              ),
               onPressed: () {
-                setState(() {
-                  //snakePosition.removeRange(0, 3);
-                  snakePosition = [65, 85, 105, 125];
-                  print('1resetSnakePosotion: $snakePosition');
-                });
-                print('2resetSnakePosotion: $snakePosition');
+                initializeGame();
                 startGame(snakePosition);
                 Navigator.of(context).pop();
               },
@@ -142,41 +181,50 @@ class _SnakeGameState extends State<SnakeGame> {
 
   void _pauseScreenPopOut() {
     showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.grey[900],
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20.0),
           ),
-          title: Center(child: Text("- GAME PAUSED -")),
+          title: Center(
+              child: Text(
+            "- GAME PAUSED -",
+            style: kWhiteTextStyle1,
+          )),
           content: Text(
             "Your Score : " + (snakePosition.length - 4).toString(),
             style: TextStyle(color: Colors.lightBlue),
           ),
           actions: [
-            FlatButton(
-              child: Text("Reset"),
-              onPressed: () {
-                setState(() {
-                  gamePaused = false;
-                  snakePosition = [65, 85, 105, 125];
-                  //snakePosition = startingSnakePosition;
-                });
-                startGame(snakePosition);
-                Navigator.of(context).pop();
-              },
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                FlatButton(
+                  child: Text("Reset",
+                      style: TextStyle(color: Colors.red, fontSize: 14)),
+                  onPressed: () {
+                    initializeGame();
+                    startGame(snakePosition);
+                    Navigator.of(context).pop();
+                  },
+                ),
+                SizedBox(width: 35),
+                FlatButton(
+                  child: Text("Continue",
+                      style: TextStyle(color: Colors.green, fontSize: 14)),
+                  onPressed: () {
+                    setState(() {
+                      gamePaused = false;
+                    });
+                    unpauseTimer();
+                    Navigator.of(context).pop();
+                  },
+                )
+              ],
             ),
-            FlatButton(
-              child: Text("Continue"),
-              onPressed: () {
-                setState(() {
-                  gamePaused = false;
-                });
-                unpauseTimer();
-                //startGame();
-                Navigator.of(context).pop();
-              },
-            )
           ],
         );
       },
@@ -191,11 +239,13 @@ class _SnakeGameState extends State<SnakeGame> {
 
   @override
   Widget build(BuildContext context) {
+    String score = (snakePosition.length - 4).toString();
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
         child: Column(
           children: <Widget>[
+            SizedBox(height: 13),
             Expanded(
               child: GestureDetector(
                 onVerticalDragUpdate: (details) {
@@ -217,21 +267,48 @@ class _SnakeGameState extends State<SnakeGame> {
                     physics: NeverScrollableScrollPhysics(),
                     itemCount: numberOfSquares,
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 20,
+                      crossAxisCount: crossAxisSquareCount,
                     ),
                     itemBuilder: (BuildContext context, int index) {
-                      if (snakePosition.contains(index))
+                      if (snakePosition.contains(index)) {
+                        //If snake head collide with border, will change color to black
+                        if (border.contains(index)) {
+                          return Container(
+                            padding: EdgeInsets.all(2),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(5),
+                              child: Container(
+                                color: Colors.black,
+                              ),
+                            ),
+                          );
+                        }
+                        if (index == snakePosition.last) {
+                          return Container(
+                            padding: EdgeInsets.all(2),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(5),
+                              child: Container(
+                                color: Colors.lightBlue,
+                              ),
+                            ),
+                          );
+                        }
                         return Center(
                           child: Container(
                             padding: EdgeInsets.all(2),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(5),
                               child: Container(
-                                color: Colors.white,
+                                color: (gameOver == true)
+                                    ? Colors.red
+                                    : Colors.white,
                               ),
                             ),
                           ),
                         );
+                      }
+
                       if (index == food) {
                         return Center(
                           child: Container(
@@ -239,8 +316,21 @@ class _SnakeGameState extends State<SnakeGame> {
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(5),
                               child: Container(
-                                color: Colors.lightBlue,
+                                color: (gameOver)
+                                    ? Colors.grey[900]
+                                    : Colors.yellowAccent,
                               ),
+                            ),
+                          ),
+                        );
+                      }
+                      if (border.contains(index)) {
+                        return Container(
+                          padding: EdgeInsets.all(2),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(5),
+                            child: Container(
+                              color: Colors.black,
                             ),
                           ),
                         );
@@ -261,30 +351,42 @@ class _SnakeGameState extends State<SnakeGame> {
               ),
             ),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 FlatButton(
+                  padding: EdgeInsets.only(left: 30),
                   onPressed: (gameStarted == true)
                       ? null
                       : () {
-                          //print('1. gameStarted: $gameStarted');
                           setState(() {
                             gameStarted = true;
-                            print('1.5 gameStarted: $gameStarted');
+                            //print('1.5 gameStarted: $gameStarted');
                           });
                           startGame(snakePosition);
                         },
                   textColor: Colors.lightGreen,
                   disabledTextColor: Colors.white24,
                   child: Text(
-                    "s t a r t",
+                    "START",
                     style: TextStyle(
-                      fontSize: 20.0,
+                      fontSize: 18.0,
                     ),
                   ),
                 ),
+                Text(
+                  score,
+                  style: TextStyle(fontSize: 40, color: Colors.white),
+                ),
+                // FlatButton(
+                //     onPressed: gameBorder,
+                //     child: Text(
+                //       "ss",
+                //       style: kWhiteTextStyle1,
+                //     )),
                 FlatButton(
-                  onPressed: (gameStarted == false)
+                  padding: EdgeInsets.only(right: 30),
+                  onPressed: (gameStarted == false || gamePaused == true)
                       ? null
                       : () {
                           setState(() {
@@ -295,37 +397,12 @@ class _SnakeGameState extends State<SnakeGame> {
                   textColor: Colors.redAccent,
                   disabledTextColor: Colors.white24,
                   child: Text(
-                    "p a u s e",
+                    "PAUSE",
                     style: TextStyle(
-                      fontSize: 20.0,
+                      fontSize: 18.0,
                     ),
                   ),
                 ),
-                // GestureDetector(
-                //   onTap: startGame,
-                //   child: Center(
-                //     child: Text(
-                //       "s t a r t",
-                //       style: TextStyle(
-                //         color: Colors.lightBlue,
-                //         fontSize: 20.0,
-                //       ),
-                //     ),
-                //   ),
-                // ),
-                // GestureDetector(
-                //   onTap: () {
-                //     //timer.pause;
-                //     _resetScreen;
-                //   },
-                //   child: Text(
-                //     "r e s e t",
-                //     style: TextStyle(
-                //       color: Colors.lightBlue,
-                //       fontSize: 20.0,
-                //     ),
-                //   ),
-                // ),
               ],
             )
           ],

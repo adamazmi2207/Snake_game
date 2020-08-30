@@ -1,4 +1,4 @@
-name: destini_challenge_starting
+name: snake_game
 description: A new Flutter application.
 
 version: 1.0.0+1
@@ -10,6 +10,8 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^0.1.2
+  google_fonts: ^1.1.0
+
 
 dev_dependencies:
   flutter_test:
