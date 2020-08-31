@@ -13,6 +13,7 @@ class _SnakeGameState extends State<SnakeGame> {
   @override
   void initState() {
     gameBorder();
+    generateFood();
     super.initState();
   }
 
@@ -24,7 +25,7 @@ class _SnakeGameState extends State<SnakeGame> {
   Timer _timer;
   static var randomNumber = Random();
   List<int> border = [];
-  int food = randomNumber.nextInt(700);
+  int food;
   static bool gameStarted = false;
   static bool gamePaused = false;
   static bool gameOver = false;
@@ -33,8 +34,8 @@ class _SnakeGameState extends State<SnakeGame> {
     food = randomNumber.nextInt(700);
     //if random number includes outside border's number, recalculate generateFood()
     if (border.contains(food)) {
-      int food = generateFood();
-      return food;
+      food = generateFood();
+      //return food;
     } else
       return food;
   }
@@ -245,7 +246,7 @@ class _SnakeGameState extends State<SnakeGame> {
       body: SafeArea(
         child: Column(
           children: <Widget>[
-            SizedBox(height: 13),
+            SizedBox(height: 20),
             Expanded(
               child: GestureDetector(
                 onVerticalDragUpdate: (details) {
@@ -308,7 +309,6 @@ class _SnakeGameState extends State<SnakeGame> {
                           ),
                         );
                       }
-
                       if (index == food) {
                         return Center(
                           child: Container(
@@ -366,7 +366,7 @@ class _SnakeGameState extends State<SnakeGame> {
                           startGame(snakePosition);
                         },
                   textColor: Colors.lightGreen,
-                  disabledTextColor: Colors.white24,
+                  disabledTextColor: Colors.black,
                   child: Text(
                     "START",
                     style: TextStyle(
